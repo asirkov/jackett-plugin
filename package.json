@@ -1,12 +1,12 @@
 {
-  "name": "stremio-toloka-addon",
-  "version": "1.0.0",
-  "description": "Stremio addon that fetches Ukrainian torrents from Prowlarr or Jackett",
-  "main": "server.js",
+  "name": "jackett-plugin",
+  "version": "1.0.1",
+  "description": "Stremio addon that fetches Ukrainian torrents from Jackett",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node src/index.js"
   },
-  "author": "osirkov",
+  "author": "asirkov",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.0",

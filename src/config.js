@@ -18,7 +18,6 @@ const config = {
     "requestTimeoutMs": process.env.REQUEST_TIMEOUT_MS || 8000,
     
     "ignoreTitles": process.env.IGNORE_TITLES || defaultIgnoreTitles,
-    // "ignoreTitles": new RegExp(process.env.IGNORE_TITLES || defaultIgnoreTitles, 'i'),
 
     "cacheTtlMs": process.env.CACHE_TTL_MS || 0,
     "cacheMaximumSize": process.env.CACHE_MAXIMUM_SIZE || 0,

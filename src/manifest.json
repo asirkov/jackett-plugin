@@ -1,5 +1,5 @@
 {
-    "id": "org.stremio.jackett-stremio",
+    "id": "org.stremio.jackett-plugin",
     "version": "1.0.1",
     "name": "Jackett (S/H)",
     "description": "Stremio-плагін, що шукає українські торенти через Jackett.",

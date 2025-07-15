@@ -1,0 +1,26 @@
+{
+    "id": "org.stremio.jackett-stremio",
+    "version": "1.0.1",
+    "name": "Jackett (S/H)",
+    "description": "Stremio-плагін, що шукає українські торенти через Jackett.",
+    "logo": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jacket-logo.png",
+    "icon": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jacket-icon.png",
+    "resources": [
+        "stream"
+    ],
+    "types": [
+        "movie",
+        "series"
+    ],
+    "idPrefixes": [
+        "tt",
+        "tmdb"
+    ],
+    "behaviorHints": {
+        "configurationRequired": false,
+        "p2p": true,
+        "configurable": false,
+        "adult": false
+    },
+    "catalogs": []
+}

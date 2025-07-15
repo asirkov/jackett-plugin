@@ -82,15 +82,15 @@ Returns streaming links (torrent magnet URIs) for the specified content type and
       "name": "720p",
       "tag": "720p",
       "type": "movie",
-      "infoHash": "2318753dca3543ff7f2a7912c640674038a4f205",
+      "infoHash": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
       "title": "Джон Уік 4 / Джон Вік 4 / John Wick: Chapter 4 (2023) BDRip 720p 3xUkr/Eng | Sub Ukr/Eng\n\n👤 4/4  💾 8.6 gb ⚙️ toloka\n📅 21 вересня 2023 р.",
       "seeders": 4,
       "published": "2023-09-21T21:00:00.000Z",
       "sources": [
-        "tracker:http://bt.toloka.to/announce/?h=LRr687hb0q&",
-        "tracker:http://bt.hurtom.com/announce/?h=LRr687hb0q&",
-        "tracker:http://bt.toloka.tv/announce/?h=LRr687hb0q&",
-        "dht:2318753dca3543ff7f2a7912c640674038a4f205"
+        "tracker:http://bt.toloka.to/announce/?h=xxxxxx&",
+        "tracker:http://bt.hurtom.com/announce/?h=xxxxxx&",
+        "tracker:http://bt.toloka.tv/announce/?h=xxxxxx&",
+        "dht:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
       ],
       "behaviorHints": {
         "bingeGroup": "tt10366206"
@@ -107,7 +107,6 @@ Returns streaming links (torrent magnet URIs) for the specified content type and
 * `seeders` — number of reported seeders at time of scraping
 * `sources` — array of announce URLs and DHT hashes
 * `behaviorHints.bingeGroup` — groups torrents for better UX in Stremio
-
 
 ## ⚙️ Configuration
 
@@ -177,7 +176,7 @@ docker run --rm -p 7000:7000 asirkov/jackett-plugin
 
 ### Using Docker Compose (the addon and Jackett simultaneously)
 
-See [tbd](tbd)
+See [Stremio Service](https://github.com/asirkov/stremio-service)
 
 ### Using Node.js
 

@@ -1,3 +1,5 @@
+const { version } = require('../package.json');
+
 const axios = require("axios")
 
 const { addonBuilder, serveHTTP } = require('stremio-addon-sdk')
@@ -7,6 +9,9 @@ const config = require("./config")
 const jackett = require('./jackett')
 
 const manifest = require("./manifest.json")
+manifest.version = version
+manifest.name = config.name
+
 const builder = new addonBuilder(manifest)
 
 if (config.debug) {
@@ -235,8 +240,26 @@ async function getTmdbInfo(language, type, id) {
 }
 
 function parseTbdbGetInfo(type, id, tbdbInfo) {
-  // TODO: tbd
-  return []
+  const tmdbId = parseId(id)
+
+  const year = parseTmdbYear(tbdbInfo["release_date"])
+
+  const title = tbdbInfo["title"]
+  const name = tbdbInfo["name"]
+
+  const season = parseSeason(id)
+  const episode = parseEpisode(id)
+
+  const result = []
+  result.push({ id: tmdbId, type: type, name: title || name, year: year, season: season, episode: episode, db: "tmdb" })
+
+  if (year) {
+    result.push({ id: tmdbId, type: type, name: `${title || name} ${year}`, year: year, season: season, episode: episode, db: "tmdb" })
+  } else if (season) {
+    result.push({ id: tmdbId, type: type, name: `${title || name} S${season}`, season: season, episode: episode, db: "tmdb" })
+  }
+
+  return result
 }
 
 async function getInfo(type, id) {
@@ -268,19 +291,19 @@ async function getInfo(type, id) {
 }
 
 function findIndexBySeasonAndEpisode(files, season, episode) {
-  const s = season.toString().padStart(1, '0');   // без ведучих нулів
-  const ss = season.toString().padStart(2, '0');  // з ведучими нулями
+  const s = season.toString().padStart(1, '0');   // without leading zeros
+  const ss = season.toString().padStart(2, '0');  // with leading zeros
   const e = episode.toString().padStart(1, '0');
   const ee = episode.toString().padStart(2, '0');
 
   const patterns = [
-    new RegExp(`s${s}e${e}`, 'i'),                                // s1e4 — без ведучих нулів (короткий формат)
-    new RegExp(`s${ss}e${ee}`, 'i'),                              // s01e04 — стандартний формат з ведучими нулями
-    new RegExp(`\\b${s}[x\\-]${ee}\\b`, 'i'),                     // 1x04 або 1-04 — альтернативні позначення сезону/епізоду
-    new RegExp(`e${ee}\\b`, 'i'),                                 // e04 — коли вказується тільки епізод
-    new RegExp(`\\b${ee}\\b`, 'i'),                               // 04 як окреме слово — може бути просто номер епізоду
-    new RegExp(`\\b${e}\\b`, 'i'),                                // 4 як окреме слово — без ведучого нуля
-    new RegExp(`\\b${e}\\s*(з|із|of|/|\\\\)\\s*\\d{1,2}\\b`, 'i') // 4 з 13, 4 із 13, 4 of 13, 4/13 або 4\13 — частина з X епізодів
+    new RegExp(`s${s}e${e}`, 'i'),                                // s1e4 — without leading zeros (short)
+    new RegExp(`s${ss}e${ee}`, 'i'),                              // s01e04 — default format with leading zeros
+    new RegExp(`\\b${s}[x\\-]${ee}\\b`, 'i'),                     // 1x04 або 1-04 —  alternative season/episode format
+    new RegExp(`e${ee}\\b`, 'i'),                                 // e04 — only episode number
+    new RegExp(`\\b${ee}\\b`, 'i'),                               // 04 episode number as separate word
+    new RegExp(`\\b${e}\\b`, 'i'),                                // 4 episode number as separate word without leading zeros
+    new RegExp(`\\b${e}\\s*(з|із|of|/|\\\\)\\s*\\d{1,2}\\b`, 'i') // 4 з 13, 4 із 13, 4 of 13, 4/13 або 4\13 — specific formats for UA-uk names
   ]
 
 
@@ -324,7 +347,18 @@ function findIndexByYear(files, year) {
   return files.indexOf(file)
 }
 
-const parseStream = (info, indexerTorrent, parsedTorrent) => {
+function containsVideoFile(parsedTorrent) {
+  if (!parsedTorrent || !parsedTorrent.files) {
+    return false
+  }
+
+  const files = parsedTorrent.files
+  const videoIdx = findIndexByVideoExtencion(files)
+
+  return videoIdx >= 0
+}
+
+function parseStream(info, indexerTorrent, parsedTorrent) {
   const stream = {};
   const infoHash = parsedTorrent.infoHash.toLowerCase();
 
@@ -428,6 +462,7 @@ async function streamHandlerUnsafe({ type, id }) {
   config.debug && console.log("infoTorrents:", infoTorrents);
 
   const streams = infoTorrents.flatMap(infoTorrent => infoTorrent.torrents
+    .filter(torrent => containsVideoFile(torrent.parsedTorrent))
     .map(torrent => parseStream(infoTorrent.info, torrent.indexerTorrent, torrent.parsedTorrent))
   )
 

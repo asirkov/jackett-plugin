@@ -4,6 +4,7 @@ const config = {
 
     "port": process.env.PORT || 7000,
     "debug": process.env.DEBUG === "true" || false,
+    "name": process.env.NAME || "Jackett (S/H)",
 
     "jackettUrl": process.env.JACKETT_URL || "http://127.0.0.1:9117",
     "jackettApiKey": process.env.JACKETT_API_KEY,

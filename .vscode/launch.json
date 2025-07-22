@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run & Attach in Docker (Debug)",
+            "type": "node",
+            "request": "attach",
+            "address": "localhost",
+            "port": 9229,
+            "localRoot": "${workspaceFolder}",
+            "remoteRoot": "/app",
+            "restart": true,
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "docker-build-and-run",
+            "postDebugTask": "docker-kill",
+        },
+    ]
+}

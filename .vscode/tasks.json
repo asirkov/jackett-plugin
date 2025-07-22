@@ -1,0 +1,43 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "docker-build",
+            "type": "shell",
+            "command": "sudo docker build -t jackett-plugin:debug .",
+            "problemMatcher": [],
+            "presentation": {
+                "close": true,
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "docker-run",
+            "type": "shell",
+            "command": "sudo docker run -d --rm --name jackett-debug --network stremionetwork --env-file .env -p 7001:7001 -p 9229:9229 jackett-plugin:debug node --inspect=0.0.0.0:9229 src/index.js",
+            "problemMatcher": [],
+            "presentation": {
+                "close": true,
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "docker-build-and-run",
+            "dependsOn": [
+                "docker-build",
+                "docker-run"
+            ],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "docker-kill",
+            "type": "shell",
+            "command": "sudo docker kill jackett-debug || true",
+            "problemMatcher": [],
+            "presentation": {
+                "close": true,
+                "reveal": "always"
+            }
+        }
+    ]
+}

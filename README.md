@@ -114,10 +114,11 @@ Configuration is handled via environment variables or default values.
 
 ### Parameters
 
-| Environment Variable | Description                 | Type    | Default Value |
-| -------------------- | --------------------------- | ------- | ------------- |
-| `PORT`               | Port the server listens on  | number  | `7000`        |
-| `DEBUG`              | Debug mode for logging (`true`/`false`) | boolean | `false`       |
+| Environment Variable | Description                              | Type    | Default Value   |
+| -------------------- | ---------------------------------------- | ------- | --------------- |
+| `PORT`               | Port the server listens on               | number  | `7000`          |
+| `DEBUG`              | Debug mode for logging (`true`/`false`)  | boolean | `false`         |
+| `NAME`               | Plugin name to dicplay                   | string  | `Jackett (S/H)` |
 
 ### Jackett
 
@@ -197,6 +198,7 @@ Or with `.env` file:
 ```dotenv
 PORT=7001
 DEBUG=true
+NAME=Jackett
 JACKETT_URL=http://localhost:9117
 JACKETT_API_KEY=your_api_key
 TBDB_API_KEY=your_tmdb_key

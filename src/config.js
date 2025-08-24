@@ -9,7 +9,7 @@ const config = {
   jackettUrl: process.env.JACKETT_URL || "http://127.0.0.1:9117",
   jackettApiKey: process.env.JACKETT_API_KEY,
 
-  tmdbApiKey: process.env.TBDB_API_KEY,
+  tmdbApiKey: process.env.TMDB_API_KEY,
   languages: process.env.LANGUAGES?.split(",") || ["en-US"],
 
   maximumSize: process.env.MAXIMUM_SIZE || "10GB",

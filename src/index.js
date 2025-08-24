@@ -88,7 +88,7 @@ function parseTmdbYear(tmdbReleaseDate) {
     return null;
   }
 
-  parts = tmdbReleaseDate.split("-");
+  const parts = tmdbReleaseDate.split("-");
   if (!parts || parts.length === 0) {
     return null;
   }
@@ -103,7 +103,7 @@ function parseTmdbYear(tmdbReleaseDate) {
 
 function parseTtYear(ttYear) {
   const year = parseInt(ttYear, 10);
-  if (isNaN(num)) {
+  if (isNaN(year)) {
     return null;
   }
 
@@ -578,9 +578,9 @@ async function streamHandlerUnsafe({ type, id }) {
 
 async function streamHandler(args) {
   try {
-    return streamHandlerUnsafe(args);
+    return await streamHandlerUnsafe(args);
   } catch (e) {
-    console.error();
+    console.error(e);
     return { streams: [] };
   }
 }

@@ -123,7 +123,7 @@ Configuration is handled via environment variables or default values.
 
 | Environment Variable | Description                                     | Type      | Default Value |
 | -------------------- | ----------------------------------------------- | --------- | ------------- |
-| `TBDB_API_KEY`       | API key for [TMDb](https://www.themoviedb.org/) | string    | -             |
+| `TMDB_API_KEY`       | API key for [TMDb](https://www.themoviedb.org/) | string    | -             |
 | `LANGUAGES`          | Languages for TMDb requests (comma-separated)   | string\[] | `["en-US"]`   |
 
 ### Filtering Results
@@ -180,7 +180,7 @@ npm install
 PORT=7001 \
 JACKETT_URL=http://localhost:9117 \
 JACKETT_API_KEY=your_api_key \
-TBDB_API_KEY=your_tmdb_key \
+TMDB_API_KEY=your_tmdb_key \
 node index.js
 ```
 
@@ -192,7 +192,7 @@ DEBUG=true
 NAME=Jackett
 JACKETT_URL=http://localhost:9117
 JACKETT_API_KEY=your_api_key
-TBDB_API_KEY=your_tmdb_key
+TMDB_API_KEY=your_tmdb_key
 LANGUAGES=en-US,uk-UA
 MAXIMUM_SIZE=8GB
 MINIMUM_SEEDERS=10

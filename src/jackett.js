@@ -283,15 +283,19 @@ async function search(info, host, apiKey) {
     host,
     apiKey
   );
-  const indexerTorrents = indexerTorrentMap.flatMap((indexerTorrentMap) =>
-    parseIndexerTorrents(
-      indexerTorrentMap[0],
-      indexerTorrentMap[1],
-      host,
-      info.type,
-      info.id
-    )
-  );
+
+  const indexerTorrents = indexerTorrentMap
+    // Only process entries with [indexer, torrents]
+    .filter(item => Array.isArray(item) && item.length === 2)
+    .flatMap(([indexer, torrents]) =>
+      parseIndexerTorrents(
+        indexer,
+        torrents,
+        host,
+        info.type,
+        info.id
+      )
+    );
   config.debug &&
     console.log("indexerTorrents:", JSON.stringify(indexerTorrents));
 

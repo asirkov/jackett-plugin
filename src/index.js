@@ -126,7 +126,7 @@ function parseTmdbFindInfo(type, id, tmdbInfo) {
     return [];
   }
 
-  const year = parseTmdbYear(tmdbInfoResult["release_date"]);
+  const year = parseTmdbYear(tmdbInfoResult["release_date"] || tmdbInfoResult["first_air_date"]);
 
   const title = tmdbInfoResult["title"];
   const name = tmdbInfoResult["name"];
@@ -256,7 +256,7 @@ async function getTmdbInfo(language, type, id) {
 function parseTmdbGetInfo(type, id, tmdbInfo) {
   const tmdbId = parseId(id);
 
-  const year = parseTmdbYear(tmdbInfo["release_date"]);
+  const year = parseTmdbYear(tmdbInfo["release_date"] || tmdbInfo["first_air_date"]);
 
   const title = tmdbInfo["title"];
   const name = tmdbInfo["name"];
@@ -467,7 +467,8 @@ function parseStream(info, indexerTorrent, parsedTorrent) {
     }
   }
 
-  let title = indexerTorrent.title;
+  const rawTitle = indexerTorrent.title;
+  let title = rawTitle;
 
   const published = indexerTorrent.published;
   const publishedDateStr = published.toLocaleDateString("uk-UA", {
@@ -507,7 +508,11 @@ function parseStream(info, indexerTorrent, parsedTorrent) {
     bingeGroup: bingeGroup,
   };
 
-  const relevance = relevanceScore(info, stream);
+  // Compute relevance using the raw, undecorated title
+  const relevance = relevanceScore(info, {
+    ...stream,
+    title: rawTitle,
+  });
   stream.relevance = relevance;
 
   config.debug && console.log("Parsed stream:", JSON.stringify(stream));
@@ -544,13 +549,14 @@ async function streamHandlerUnsafe({ type, id }) {
       .map((torrent) => parseStream(infoTorrent.info, torrent.indexerTorrent, torrent.parsedTorrent))
   );
 
-  const unique = Array.from(new Map(streams.map((stream) => [stream.infoHash, stream])).values());
-
   // TODO: consider moving sort parameter to config
-  // const result = unique.sort((a, b) => b.seeders - a.seeders)
-  // const result = unique.sort((a, b) => b.published - a.published);
-  const result = unique.sort((a, b) => b.relevance - a.relevance).map(({ relevance, ...rest }) => rest);
-  
+  // const sorted = unique.sort((a, b) => b.seeders - a.seeders)
+  // const sorted = unique.sort((a, b) => b.published - a.published);
+  const sorted = [...streams].sort((a, b) => b.relevance - a.relevance);
+
+  const unique = Array.from(new Map(sorted.map((stream) => [stream.infoHash, stream])).values());
+  const result = unique.map(({ relevance, ...rest }) => rest);
+
   config.debug && console.log("Cache stats: ", cache.stats());
   return { streams: result.slice(0, config.maximumCount) };
 }

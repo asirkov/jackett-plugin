@@ -203,7 +203,7 @@ function parseIndexerTorrents(indexer, torrents, host, type, id) {
       newObj.magneturl &&
       newObj.magneturl.startsWith("magnet:") &&
       newObj.link &&
-      newObj.link.startsWith("http://")
+      /^https?:\/\//i.test(newObj.link)
     ) {
       newObj.link = newObj.magneturl;
     }

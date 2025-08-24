@@ -14,5 +14,5 @@ CMD ["node", "src/index.js"]
 ###########################################################
 # Build and run example: 
 #
-# sudo docker build -t jackett-plugin:debug . && sudo docker run -it --rm -p 7001:7001 --env-file .env jackett-plugin:debug
+# sudo docker build -t jackett-plugin:debug . && sudo docker run -it --init --rm -p 7001:7001 --env-file .env jackett-plugin:debug
 #

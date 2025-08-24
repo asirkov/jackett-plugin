@@ -2,7 +2,7 @@ const defaultIgnoreTitles =
   "\\b(Telecine|CAMRip)\\b|\\b(?:HD-?)?T(?:ELE)?S(?:YNC)?\\b|\\b(?:HD-?)?CAM\\b|\\b(?:HQ-?)?CAM\\b";
 
 const config = {
-  port: process.env.PORT || 7000,
+  port: Number(process.env.PORT) || 7000,
   debug: process.env.DEBUG === "true" || false,
   name: process.env.NAME || "Jackett (S/H)",
 
@@ -12,11 +12,11 @@ const config = {
   tmdbApiKey: process.env.TMDB_API_KEY,
   languages: process.env.LANGUAGES?.split(",") || ["en-US"],
 
-  maximumSize: process.env.MAXIMUM_SIZE || "10GB",
-  minimumSeeders: process.env.MINIMUM_SEEDERS || 5,
-  maximumCount: process.env.MAXIMUM_COUNT || 10,
+  maximumSize: Number(process.env.MAXIMUM_SIZE) || "10GB",
+  minimumSeeders: Number(process.env.MINIMUM_SEEDERS) || 5,
+  maximumCount: Number(process.env.MAXIMUM_COUNT) || 10,
 
-  requestTimeoutMs: process.env.REQUEST_TIMEOUT_MS || 8 * 1000,
+  requestTimeoutMs: Number(process.env.REQUEST_TIMEOUT_MS) || 8 * 1000,
 
   ignoreTitles: process.env.IGNORE_TITLES || defaultIgnoreTitles,
 

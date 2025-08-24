@@ -20,18 +20,11 @@ function buildCacheKey(url, params = {}) {
   const parsed = query ? qs.parse(query) : {};
   const merged = { ...parsed, ...params };
 
-  const decoded = {};
-  for (const key in merged) {
-    const cleanKey = decodeURIComponent(key);
-    const val = merged[key];
-    decoded[cleanKey] = typeof val === "string" ? decodeURIComponent(val) : val;
-  }
-
   for (const key of ignoreKeys) {
-    delete decoded[key];
+    delete merged[key];
   }
 
-  const normalizedQuery = qs.stringify(decoded, {
+  const normalizedQuery = qs.stringify(merged, {
     encode: false,
     sort: (a, b) => a.localeCompare(b),
   });
@@ -44,34 +37,33 @@ function buildCacheKey(url, params = {}) {
 async function get(url, params = {}, options = {}) {
   const cacheKey = buildCacheKey(url, params);
 
-  if (config.cacheEnabled) {
+  if (config.cacheEnabled && cache.has(cacheKey)) {
     const cached = cache.get(cacheKey);
-
-    if (cached) {
-      config.debug && console.log("✅ Cache HIT:", cacheKey);
-      stats.hits += 1;
-      return cached;
-    }
+    config.debug && console.log("✅ Cache HIT:", cacheKey);
+    stats.hits += 1;
+    return cached;
   }
 
   return axios
     .get(url, {
       params,
-      validateStatus: null,
+      validateStatus: () => true, // don't throw; inspect status manually
       ...options,
     })
     .then((response) => {
+      const ok = response.status >= 200 && response.status < 300 && response.data != null;
+
       if (config.cacheEnabled) {
-        cache.set(cacheKey, response.data);
-        config.debug && console.log("📥 Cache MISS:", cacheKey);
-        stats.misses += 1;
+        if (ok) {
+          cache.set(cacheKey, response.data);
+          stats.misses += 1;
+          config.debug && console.log("📥 Cache MISS:", cacheKey, { status: response.status });
+        } else {
+          config.debug && console.warn("↪️ Not caching non-2xx response", { status: response.status, url });
+        }
       }
 
-      return response.data;
-    })
-    .catch((err) => {
-      console.error("❌ Error while GET:", url, err.message);
-      return null;
+      return ok ? response.data : null;
     });
 }
 
@@ -100,18 +92,23 @@ if (config.cacheEnabled) {
 
 if (config.debug) {
   axios.interceptors.request.use((request) => {
+    const redact = (obj) =>
+      obj
+        ? Object.fromEntries(Object.entries(obj).map(([k, v]) => (ignoreKeys.includes(k) ? [k, "***"] : [k, v])))
+        : obj;
     console.log({
       method: request.method,
       url: request.url,
-      params: request.params,
+      params: redact(request.params),
     });
     return request;
   });
 
   axios.interceptors.response.use((response) => {
+    const isBinary = response.config?.responseType === "arraybuffer";
     console.log({
       status: response.status,
-      data: response.data,
+      data: isBinary ? `<arraybuffer:${response.data?.byteLength ?? response.data?.length ?? 0} bytes>` : response.data,
     });
     return response;
   });

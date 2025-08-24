@@ -178,10 +178,11 @@ async function getTtInfo(type, id) {
     return [];
   }
 
-  return parseTtInfo(response);
+  return parseTtInfo(type, id, response);
 }
 
 function parseTtInfo(type, id, ttInfo) {
+  const ttId = parseId(id);
   if (!ttInfo) {
     return [];
   }
@@ -199,7 +200,7 @@ function parseTtInfo(type, id, ttInfo) {
 
   const result = [
     {
-      id: tmdbId,
+      id: ttId,
       type: type,
       name: name,
       year: year,
@@ -211,7 +212,7 @@ function parseTtInfo(type, id, ttInfo) {
 
   if (year) {
     result.push({
-      id: tmdbId,
+      id: ttId,
       type: type,
       name: `${name} ${year}`,
       year: year,

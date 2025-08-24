@@ -133,10 +133,10 @@ async function findTmdbInfo(language, type, id) {
     return [];
   }
 
-  return parseTbdbFindInfo(type, id, response.data);
+  return parseTmdbFindInfo(type, id, response.data);
 }
 
-function parseTbdbFindInfo(type, id, tmdbInfo) {
+function parseTmdbFindInfo(type, id, tmdbInfo) {
   const tmdbId = parseId(id);
   const tmdbType = parseTmdbType(type);
 
@@ -256,11 +256,11 @@ function parseTtInfo(type, id, ttInfo) {
 }
 
 async function getTmdbInfo(language, type, id) {
-  tbdbId = parseId(id);
-  if (!tbdbId) {
+  const tmdbId = parseId(id);
+  if (!tmdbId) {
     return [];
   }
-  tmdbType = parseTmdbType(type);
+  const tmdbType = parseTmdbType(type);
   if (!tmdbType) {
     return [];
   }
@@ -270,7 +270,7 @@ async function getTmdbInfo(language, type, id) {
     language: language,
   };
   const response = await axios.get(
-    `https://api.themoviedb.org/3/${tmdbType}/${tbdbId}`,
+    `https://api.themoviedb.org/3/${tmdbType}/${tmdbId}`,
     {
       params: params,
       maxRedirects: 5,
@@ -284,16 +284,16 @@ async function getTmdbInfo(language, type, id) {
     return [];
   }
 
-  return parseTbdbGetInfo(type, response.data);
+  return parseTmdbGetInfo(type, id, response.data);
 }
 
-function parseTbdbGetInfo(type, id, tbdbInfo) {
+function parseTmdbGetInfo(type, id, tmdbInfo) {
   const tmdbId = parseId(id);
 
-  const year = parseTmdbYear(tbdbInfo["release_date"]);
+  const year = parseTmdbYear(tmdbInfo["release_date"]);
 
-  const title = tbdbInfo["title"];
-  const name = tbdbInfo["name"];
+  const title = tmdbInfo["title"];
+  const name = tmdbInfo["name"];
 
   const season = parseSeason(id);
   const episode = parseEpisode(id);

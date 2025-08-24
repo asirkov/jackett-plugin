@@ -4,6 +4,7 @@ const util = {
   toBytesSize(stringSize) {
     const sizeString =
       typeof stringSize === "string" ? stringSize : stringSize.toString();
+
     const sizeRegex = /^(\d+(\.\d+)?)\s*([kKmMgGtT]?[bB]?)$/;
     const match = sizeString.match(sizeRegex);
 
@@ -11,11 +12,12 @@ const util = {
       console.error(
         "Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example: 5GB"
       );
-      return 10000000000;
+      return 10 * 1024 ** 3; // 10 GiB default
     }
 
     const numericPart = parseFloat(match[1]);
-    const unit = match[3].toUpperCase();
+    const rawUnit = (match[3] || "B").toUpperCase();
+    const unit = rawUnit.endsWith("B") ? rawUnit : rawUnit + "B";
 
     const units = {
       B: 1,
@@ -29,10 +31,11 @@ const util = {
       console.error(
         "Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example: 5GB"
       );
-      return 10000000000;
+
+      return 10 * 1024 ** 3; // 10 GiB default
     }
 
-    return parseInt(numericPart * units[unit]);
+    return Math.round(numericPart * units[unit]);
   },
 
   toStringSize: (bytesSize) => {

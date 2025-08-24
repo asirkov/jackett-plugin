@@ -83,7 +83,9 @@ const util = {
   },
 
   cleanTorrentName: (name) => {
-    if (typeof name !== "string" || name.length === 0) return "";
+    if (typeof name !== "string" || name.length === 0) {
+      return "";
+    }
     let cleaned = name;
 
     // Extract year if it exists in parentheses or after the title

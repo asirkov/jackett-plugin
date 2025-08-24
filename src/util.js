@@ -2,16 +2,13 @@ import videoNameParser from "video-name-parser";
 
 const util = {
   toBytesSize(stringSize) {
-    const sizeString =
-      typeof stringSize === "string" ? stringSize : stringSize.toString();
+    const sizeString = typeof stringSize === "string" ? stringSize : stringSize.toString();
 
     const sizeRegex = /^(\d+(\.\d+)?)\s*([kKmMgGtT]?[bB]?)$/;
     const match = sizeString.match(sizeRegex);
 
     if (!match) {
-      console.error(
-        "Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example: 5GB"
-      );
+      console.error("Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example: 5GB");
       return 10 * 1024 ** 3; // 10 GiB default
     }
 
@@ -28,9 +25,7 @@ const util = {
     };
 
     if (!Object.hasOwn(units, unit)) {
-      console.error(
-        "Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example: 5GB"
-      );
+      console.error("Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example: 5GB");
 
       return 10 * 1024 ** 3; // 10 GiB default
     }
@@ -87,6 +82,37 @@ const util = {
       .replace(/\\'|\\"/g, "");
   },
 
+  cleanTorrentName: (name) => {
+    let cleaned = name;
+
+    // Виділяємо рік, якщо він є в дужках або після назви
+    let yearMatch = cleaned.match(/\b(19|20)\d{2}\b/);
+    let year = yearMatch ? yearMatch[0] : "";
+
+    // Беремо все до першого слеша або вертикальної риски як основну назву
+    cleaned = cleaned.split(/[\/|]/)[0];
+
+    // Видаляємо технічні теги: роздільник, кодеки, HDR/SDR, мовні теги
+    cleaned = cleaned.replace(
+      /\b(1080p|720p|uhd|bdrip|bdremux|dvdrip|webrip|web-dl|h\.265|h\.264|hdr|sdr|avc|hevc|x264|x265|uhd|hd|bluray|dvdscr|cam|line)\b/gi,
+      ""
+    );
+    cleaned = cleaned.replace(/\b(ukr|eng|fre|kor|jpn|sub|2xukr|2xeng|3xukr)\b/gi, "");
+
+    // Видаляємо зайві символи
+    cleaned = cleaned.replace(/[^a-zа-яё0-9\s\(\)\:]/gi, " ");
+
+    // Замінюємо множинні пробіли на один
+    cleaned = cleaned.replace(/\s+/g, " ").trim();
+
+    // Додаємо рік, якщо він знайдений
+    if (year) {
+      cleaned = `${cleaned} ${year}`;
+    }
+
+    return cleaned;
+  },
+
   parseVideoName: (name) => {
     return videoNameParser(name + ".mp4");
   },
@@ -105,13 +131,9 @@ const util = {
       extraTag = extraTag.replace(parsed.year.toString(), "");
     }
 
-    const hasEpisode =
-      parsed.season != null && (parsed.episode?.length ?? 0) > 0;
+    const hasEpisode = parsed.season != null && (parsed.episode?.length ?? 0) > 0;
     if (hasEpisode) {
-      const episodeTag = util.extractEpisodeTag(
-        parsed.season,
-        parsed.episode[0]
-      );
+      const episodeTag = util.extractEpisodeTag(parsed.season, parsed.episode[0]);
       extraTag = extraTag.replace(new RegExp(episodeTag, "gi"), "");
     }
 
@@ -119,10 +141,7 @@ const util = {
     let extraParts = extraTag.split(/\s+/);
 
     if (hasEpisode && extraParts[0]?.length === 2 && !isNaN(extraParts[0])) {
-      const possibleEpTag = `${util.extractEpisodeTag(
-        parsed.season,
-        parsed.episode[0]
-      )}-${extraParts[0]}`;
+      const possibleEpTag = `${util.extractEpisodeTag(parsed.season, parsed.episode[0])}-${extraParts[0]}`;
       if (name.toLowerCase().includes(possibleEpTag.toLowerCase())) {
         extraParts[0] = possibleEpTag;
       }

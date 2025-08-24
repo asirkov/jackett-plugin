@@ -1,4 +1,6 @@
 import StremioAddonSdk from "stremio-addon-sdk";
+import fzf from "string-similarity";
+
 const { addonBuilder, serveHTTP } = StremioAddonSdk;
 
 import jackett from "./jackett.js";
@@ -143,7 +145,7 @@ function parseTmdbFindInfo(type, id, tmdbInfo) {
     db: "tmdb",
   });
 
-  if (year) {
+  if (config.additionalYearSearch && year) {
     result.push({
       id: tmdbId,
       type: type,
@@ -153,7 +155,8 @@ function parseTmdbFindInfo(type, id, tmdbInfo) {
       episode: episode,
       db: "tmdb",
     });
-  } else if (season) {
+  }
+  if (config.additionalSeasonSearch && season) {
     result.push({
       id: tmdbId,
       type: type,
@@ -210,7 +213,7 @@ function parseTtInfo(type, id, ttInfo) {
     },
   ];
 
-  if (year) {
+  if (config.additionalYearSearch && year) {
     result.push({
       id: ttId,
       type: type,
@@ -272,7 +275,7 @@ function parseTmdbGetInfo(type, id, tmdbInfo) {
     db: "tmdb",
   });
 
-  if (year) {
+  if (config.additionalYearSearch && year) {
     result.push({
       id: tmdbId,
       type: type,
@@ -282,7 +285,9 @@ function parseTmdbGetInfo(type, id, tmdbInfo) {
       episode: episode,
       db: "tmdb",
     });
-  } else if (season) {
+  }
+
+  if (config.additionalSeasonSearch && season) {
     result.push({
       id: tmdbId,
       type: type,
@@ -364,10 +369,10 @@ function countByVideoExtencion(files) {
 
 function findIndexByYear(files, year) {
   const patterns = [
-    new RegExp(`\\b${year}\\b`), // просто рік як окреме слово, наприклад: "Dune 2021 BDRip"
-    new RegExp(`\\(${year}\\)`), // рік у круглих дужках: "(2021)"
-    new RegExp(`\\[${year}\\]`), // рік у квадратних дужках: "[2021]"
-    new RegExp(`[^a-zA-Z]${year}[^a-zA-Z]`), // рік, обмежений не літерами: " -2021 ", "_2021.", " 2021 "
+    new RegExp(`\\b${year}\\b`), // just the year as a separate word, e.g. "Dune 2021 BDRip"
+    new RegExp(`\\(${year}\\)`), // year in parentheses: "(2021)"
+    new RegExp(`\\[${year}\\]`), // year in square brackets: "[2021]"
+    new RegExp(`[^a-zA-Z]${year}[^a-zA-Z]`), // year surrounded by non-letters: " -2021 ", "_2021.", " 2021 "
   ];
 
   const matchingFiles = files.filter((file) => {
@@ -389,6 +394,48 @@ function containsVideoFile(parsedTorrent) {
   const videoIdx = findIndexByVideoExtension(files);
 
   return videoIdx >= 0;
+}
+function relevanceScore(info, stream) {
+  let score = 0;
+
+  const infoTitle = info.name ? info.name.toLowerCase() : "";
+  const streamTitle = stream.title ? util.cleanTorrentName(stream.title) : "";
+
+  if (infoTitle.length > 0 && streamTitle.length > 0) {
+    // TODO: try other liblaries: fast-levenshtein or fuse.js
+    const similarity = fzf.compareTwoStrings(infoTitle, streamTitle); // 0..1
+    score += similarity * 100;
+  }
+
+  if (info.type === "movie" && info.year && streamTitle.includes(info.year.toString())) {
+    score += 30;
+  }
+
+  if (
+    info.type === "series" &&
+    info.season &&
+    (streamTitle.includes("S" + info.season) ||
+      streamTitle.includes("Season " + info.season) ||
+      streamTitle.includes("Сезон " + info.season))
+  ) {
+    score += 50;
+  }
+
+  if (stream.tag) {
+    if (stream.tag === "1080p") {
+      score += 15;
+    } else if (stream.tag.toLowerCase() === "bdrip") {
+      score += 10;
+    } else if (stream.tag.toLowerCase() === "dvdrip") {
+      score += 5;
+    }
+  }
+
+  if (stream.seeders) {
+    score += stream.seeders * 2;
+  }
+
+  return score;
 }
 
 function parseStream(info, indexerTorrent, parsedTorrent) {
@@ -421,14 +468,6 @@ function parseStream(info, indexerTorrent, parsedTorrent) {
   }
 
   let title = indexerTorrent.title;
-  // let title = util.cleanName(indexerTorrent.title);
-  // let title = util.cleanName(info.title);
-
-  // if (info.season && info.episode) {
-  //   title += ` ${util.extractEpisodeTag(info.season, info.episode)}`
-  // } else if (info.year && !title.includes(info.year)) {
-  //   title += `(${info.year})`
-  // }
 
   const published = indexerTorrent.published;
   const publishedDateStr = published.toLocaleDateString("uk-UA", {
@@ -447,11 +486,6 @@ function parseStream(info, indexerTorrent, parsedTorrent) {
   title += "\r\n" + subtitle2;
 
   const quality = util.findQuality(indexerTorrent.extraTag);
-
-  // TODO: add configuration
-
-  // stream.name = `${indexerTorrent.from}\n${quality}`;
-  // stream.name = `Jackett\n${quality}`;
   stream.name = quality;
 
   stream.tag = quality;
@@ -464,14 +498,17 @@ function parseStream(info, indexerTorrent, parsedTorrent) {
   const trackers = Array.isArray(parsedTorrent.announce) ? parsedTorrent.announce : [];
   stream.sources = trackers.map((t) => "tracker:" + t).concat(["dht:" + infoHash]);
 
-  const ttId = parseId(info.id);
+  const id = parseId(info.id);
+  let bingeGroup = id;
+  if (info.season) {
+    bingeGroup += `-s${info.season}`;
+  }
   stream.behaviorHints = {
-    bingeGroup: ttId,
+    bingeGroup: bingeGroup,
   };
 
-  if (info.type === "series") {
-    stream.behaviorHints.bingeGroup += `-s${info.season}`;
-  }
+  const relevance = relevanceScore(info, stream);
+  stream.relevance = relevance;
 
   config.debug && console.log("Parsed stream:", JSON.stringify(stream));
   return stream;
@@ -509,11 +546,13 @@ async function streamHandlerUnsafe({ type, id }) {
 
   const unique = Array.from(new Map(streams.map((stream) => [stream.infoHash, stream])).values());
 
-  // unique.sort((a, b) => b.seeders - a.seeders)
-  unique.sort((a, b) => b.published - a.published);
-
+  // TODO: consider moving sort parameter to config
+  // const result = unique.sort((a, b) => b.seeders - a.seeders)
+  // const result = unique.sort((a, b) => b.published - a.published);
+  const result = unique.sort((a, b) => b.relevance - a.relevance).map(({ relevance, ...rest }) => rest);
+  
   config.debug && console.log("Cache stats: ", cache.stats());
-  return { streams: unique.slice(0, config.maximumCount) };
+  return { streams: result.slice(0, config.maximumCount) };
 }
 
 async function streamHandler(args) {

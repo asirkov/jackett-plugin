@@ -16,6 +16,7 @@
     "video-name-parser": "^1.4.6",
     "parse-torrent": "^9.1.5",
     "qs": "^6.11.0",
-    "lru-cache": "^10.0.0"
+    "lru-cache": "^10.0.0",
+    "string-similarity": "^4.0.4"
   }
 }

@@ -12,6 +12,9 @@ const config = {
   tmdbApiKey: process.env.TMDB_API_KEY,
   languages: process.env.LANGUAGES?.split(",") || ["en-US"],
 
+  additionalYearSearch: process.env.ADDITIONAL_YEAR_SEARCH === "true" || false,
+  additionalSeasonSearch: process.env.ADDITIONAL_SEASON_SEARCH === "true" || false,
+
   maximumSize: Number(process.env.MAXIMUM_SIZE) || "10GB",
   minimumSeeders: Number(process.env.MINIMUM_SEEDERS) || 5,
   maximumCount: Number(process.env.MAXIMUM_COUNT) || 10,

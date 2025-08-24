@@ -77,6 +77,8 @@ function parseIndexers(indexers, host) {
 function getIndexerTorrentQuery(info, apiKey) {
   const query = {
     apikey: apiKey,
+    limit: 100,
+    offset: 0,
   };
 
   if (info.type == "movie") {
@@ -187,7 +189,7 @@ function parseIndexerTorrents(indexer, torrents, host, type, id) {
       }
     });
 
-    if (!config.debug && type != "series" && newObj.seeders < config.minimumSeeders) {
+    if (!config.debug && newObj.seeders < config.minimumSeeders) {
       config.debug && console.log("Skipping torrent due to low seeders:", newObj.title);
       return;
     }
@@ -201,7 +203,7 @@ function parseIndexerTorrents(indexer, torrents, host, type, id) {
       newObj.magneturl &&
       newObj.magneturl.startsWith("magnet:") &&
       newObj.link &&
-      newObj.link.startsWith("http://")
+      /^https?:\/\//i.test(newObj.link)
     ) {
       newObj.link = newObj.magneturl;
     }
@@ -234,7 +236,8 @@ async function parseTorrent(torrent) {
     try {
       return parse_torrent(torrent.link);
     } catch (e) {
-      console.error("Torrent magnet parse error:", e);
+      // config.debug &&
+      console.warn("Error fetching torrent magnet:", e);
       return null;
     }
   }
@@ -243,8 +246,8 @@ async function parseTorrent(torrent) {
 
   const response = await cache.get(url, params, { responseType: "arraybuffer" });
   if (!response || response.length === 0) {
-    // ignore empty responses here
-    config.debug && console.error("Error fetching torrent data: ", response);
+    // config.debug &&
+    console.warn("Error fetching torrent file: ", response);
     return null;
   }
 
@@ -279,7 +282,7 @@ async function search(info, host, apiKey) {
     // Only process entries with [indexer, torrents]
     .filter((item) => Array.isArray(item) && item.length === 2)
     .flatMap(([indexer, torrents]) => parseIndexerTorrents(indexer, torrents, host, info.type, info.id));
-  config.debug && console.log("indexerTorrents:", JSON.stringify(indexerTorrents));
+  // config.debug && console.log("indexerTorrents:", JSON.stringify(indexerTorrents));
 
   const torrents = await Promise.all(
     indexerTorrents.map(async (indexerTorrent) => {

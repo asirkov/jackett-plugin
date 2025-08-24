@@ -9,7 +9,7 @@ const util = {
 
     if (!match) {
       console.error(
-        "Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example : 5GB"
+        "Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example: 5GB"
       );
       return 10000000000;
     }
@@ -25,9 +25,9 @@ const util = {
       TB: 1024 * 1024 * 1024 * 1024,
     };
 
-    if (Object.prototype.hasOwnProperty.call(unit, units)) {
+    if (!Object.hasOwn(units, unit)) {
       console.error(
-        "Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example : 5GB"
+        "Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example: 5GB"
       );
       return 10000000000;
     }
@@ -49,28 +49,6 @@ const util = {
     } while (Math.abs(bytesSize) >= 1024 && i < units.length - 1);
 
     return bytesSize.toFixed(1) + " " + units[i];
-  },
-
-  insertSorted: (array, newObj, property, maxSize) => {
-    const insertIndex = array.findIndex(
-      (item) => item[property] < newObj[property]
-    );
-
-    if (insertIndex === -1) {
-      if (array.length < maxSize) {
-        array.push(newObj);
-        return true;
-      }
-      return false;
-    }
-
-    array.splice(insertIndex, 0, newObj);
-
-    if (array.length > maxSize) {
-      array.pop();
-    }
-
-    return true;
   },
 
   extractEpisodeTag: (season, episode) => {
@@ -106,61 +84,12 @@ const util = {
       .replace(/\\'|\\"/g, "");
   },
 
-  normalizeTitle: (torrent, info) => {
-    const defaultName = "👤 11/2 💾 2 gb ⚙️ therarbg";
-    let name = defaultName;
-    let found = false;
-
-    const titles = torrent.title.split("\n");
-
-    for (const line of titles) {
-      if (!line.includes("👤")) continue;
-
-      name = line;
-
-      if (!name.includes("⚙️")) {
-        name += " ⚙️ therarbg";
-      }
-
-      const match = name.match(/👤 (\d+)/);
-      if (!match) continue;
-
-      const peers = parseInt(match[1], 10);
-      if (!/👤 \d+\/\d+/.test(name)) {
-        const seeds = Math.round(peers / 1.1);
-        const leechers = Math.round(peers * 0.6);
-
-        name = name.replace(/👤 \d+/, `👤 ${seeds}/${leechers}`).toLowerCase();
-
-        const extra =
-          info.season && info.episode
-            ? util.extractEpisodeTag(info.season, info.episode)
-            : info.year;
-
-        torrent.title = `${info.name} ${extra}\n\r\n${name}`;
-        torrent.seeders = seeds;
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      const extra =
-        info.season && info.episode
-          ? util.extractEpisodeTag(info.season, info.episode)
-          : info.year;
-
-      torrent.title = `${info.name} ${extra}\n\r\n${defaultName}`;
-      torrent.seeders = 11;
-    }
-  },
-
   parseVideoName: (name) => {
     return videoNameParser(name + ".mp4");
   },
 
   extractExtraTag: (name) => {
-    const parsed = util.parseVideoName(name + ".mp4");
+    const parsed = util.parseVideoName(name);
     let extraTag = util.cleanName(name);
 
     if (parsed.name) {

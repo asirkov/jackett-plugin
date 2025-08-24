@@ -104,10 +104,9 @@ const util = {
     if (parsed.year) {
       extraTag = extraTag.replace(parsed.year.toString(), "");
     }
-    // …
-  },
 
-    const hasEpisode = parsed.season != null && (parsed.episode?.length ?? 0) > 0;
+    const hasEpisode =
+      parsed.season != null && (parsed.episode?.length ?? 0) > 0;
     if (hasEpisode) {
       const episodeTag = util.extractEpisodeTag(
         parsed.season,

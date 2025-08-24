@@ -14,14 +14,20 @@ const config = {
 
   maximumSize: process.env.MAXIMUM_SIZE || "10GB",
   minimumSeeders: process.env.MINIMUM_SEEDERS || 5,
-  minimumCount: process.env.MAXIMUM_COUNT || 10,
+  maximumCount: process.env.MAXIMUM_COUNT || 10,
 
-  requestTimeoutMs: process.env.REQUEST_TIMEOUT_MS || 8000,
+  requestTimeoutMs: process.env.REQUEST_TIMEOUT_MS || 8 * 1000,
 
   ignoreTitles: process.env.IGNORE_TITLES || defaultIgnoreTitles,
 
-  cacheTtlMs: process.env.CACHE_TTL_MS || 0,
-  cacheMaximumSize: process.env.CACHE_MAXIMUM_SIZE || 0,
+  cacheEnabled: process.env.CACHE_ENABLED === "true" || false,
+  cacheTtlMs: Number(process.env.CACHE_TTL_MS) || 5 * 60 * 1000,
+  cacheMaximumSize: Number(process.env.CACHE_MAXIMUM_SIZE) || 100,
 };
 
-module.exports = config;
+if (config.cacheMaximumSize <= 0 || config.cacheTtlMs <= 0) {
+  console.warn("Failed to init cache: CACHE_TTL_MS and CACHE_MAXIMUM_SIZE should be greated than zero");
+  config.cacheEnabled = false;
+}
+
+export default config;

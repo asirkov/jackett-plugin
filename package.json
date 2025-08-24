@@ -8,11 +8,14 @@
   },
   "author": "asirkov",
   "license": "MIT",
+  "type": "module",
   "dependencies": {
     "axios": "^1.6.0",
     "stremio-addon-sdk": "^1.1.9",
     "xml-js": "^1.6.11",
     "video-name-parser": "^1.4.6",
-    "parse-torrent": "^9.1.5"
+    "parse-torrent": "^9.1.5",
+    "qs": "^6.11.0",
+    "lru-cache": "^10.0.0"
   }
 }

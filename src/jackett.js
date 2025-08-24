@@ -1,9 +1,10 @@
-const xmlJs = require("xml-js");
-const axios = require("axios");
-const parse_torrent = require("parse-torrent");
+import xmlJs from "xml-js";
+import qs from "qs";
+import parse_torrent from "parse-torrent";
 
-const config = require("./config");
-const util = require("./util");
+import config from "./config.js";
+import cache from "./cache.js";
+import util from "./util.js";
 
 function parsePubDate(strDate) {
   if (!strDate) {
@@ -18,26 +19,21 @@ function parsePubDate(strDate) {
 }
 
 async function getIndexers(host, apiKey) {
+  const url = `${host}/api/v2.0/indexers/all/results/torznab/api`;
   const params = {
     apikey: apiKey,
     t: "indexers",
     configured: true,
   };
-  const response = await axios
-    .get(`${host}/api/v2.0/indexers/all/results/torznab/api`, {
-      params: params,
-      timeout: config.requestTimeoutMs,
-      responseType: "text",
-    })
-    .catch((err) => console.error("Error fetching indexers:", err.message));
 
-  if (!response || !response.data) {
+  const response = await cache.get(url, params, { responseType: "text" });
+  if (!response) {
     console.error("No indexers found.");
     return [];
   }
 
   try {
-    return xmlJs.xml2js(response.data);
+    return xmlJs.xml2js(response);
   } catch (err) {
     console.error("Could not parse indexers for ", host, err);
     return [];
@@ -55,7 +51,7 @@ function parseIndexers(indexers, host) {
     return [];
   }
 
-  elements = indexers.elements[0].elements;
+  const elements = indexers.elements[0].elements;
 
   elements.forEach((element, index) => {
     if (!element.elements[5].elements[3].elements) {
@@ -122,17 +118,11 @@ async function getIndexerTorrentMap(info, indexers, host, apiKey) {
         return [];
       }
 
+      const url = `${host}/api/v2.0/indexers/${indexer.attributes.id}/results/torznab/api`;
       const params = getIndexerTorrentQuery(info, apiKey);
-      const response = await axios.get(
-        `${host}/api/v2.0/indexers/${indexer.attributes.id}/results/torznab/api`,
-        {
-          params: params,
-          timeout: config.requestTimeoutMs,
-          responseType: "text",
-        }
-      );
 
-      if (!response || !response.data) {
+      const response = await cache.get(url, params, { responseType: "text" });
+      if (!response) {
         console.error(
           "Error when calling: ",
           indexer.attributes.id,
@@ -142,7 +132,7 @@ async function getIndexerTorrentMap(info, indexers, host, apiKey) {
       }
 
       try {
-        return [indexer, xmlJs.xml2js(response.data)];
+        return [indexer, xmlJs.xml2js(response)];
       } catch (err) {
         console.error("Could not parse torrents for: ", host, err);
         return [];
@@ -254,23 +244,42 @@ function parseIndexerTorrents(indexer, torrents, host, type, id) {
 }
 
 async function parseTorrent(torrent) {
-  const response = await axios.get(torrent.link, {
-    timeout: config.requestTimeoutMs,
-    maxRedirects: 0,
-    validateStatus: null,
-    responseType: "arraybuffer",
-  });
-  if (!response || response.status != 200 || !response.data) {
-    // too many error like this, remove log if not debug
-    config.debug &&
-      console.error("Error fetching torrent data: ", response.statusText);
+  if (!torrent || !torrent.link) {
     return null;
   }
 
-  const buffer = Buffer.from(response.data);
-  const parsedTorrent = parse_torrent(buffer);
+  const [url, paramsString] = torrent.link.split("?");
+  const params = paramsString ? qs.parse(paramsString) : {};
 
-  return parsedTorrent;
+  const response = await cache.get(url, params, {
+    responseType: "arraybuffer",
+  });
+  if (!response || response.length === 0) {
+    // ignore empty responses here
+    config.debug && console.error("Error fetching torrent data: ", response);
+    return null;
+  }
+
+  let buffer;
+  try {
+    buffer = Buffer.from(response);
+  } catch (err) {
+    console.error("Failed to create torrent file buffer:", err.message);
+    return null;
+  }
+
+  if (!buffer || buffer.length === 0) {
+    console.error("Torrent file buffer is empty after conversion");
+    return null;
+  }
+
+  try {
+    const parsedTorrent = parse_torrent(buffer);
+    return parsedTorrent;
+  } catch (e) {
+    console.error("Torrent file parse error:", e);
+    return null;
+  }
 }
 
 async function search(info, host, apiKey) {
@@ -286,15 +295,9 @@ async function search(info, host, apiKey) {
 
   const indexerTorrents = indexerTorrentMap
     // Only process entries with [indexer, torrents]
-    .filter(item => Array.isArray(item) && item.length === 2)
+    .filter((item) => Array.isArray(item) && item.length === 2)
     .flatMap(([indexer, torrents]) =>
-      parseIndexerTorrents(
-        indexer,
-        torrents,
-        host,
-        info.type,
-        info.id
-      )
+      parseIndexerTorrents(indexer, torrents, host, info.type, info.id)
     );
   config.debug &&
     console.log("indexerTorrents:", JSON.stringify(indexerTorrents));
@@ -314,4 +317,4 @@ async function search(info, host, apiKey) {
   );
 }
 
-module.exports = { search };
+export default { search };

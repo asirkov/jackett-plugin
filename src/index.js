@@ -385,13 +385,13 @@ function findIndexBySeasonAndEpisode(files, season, episode) {
     return patterns.some((pattern) => pattern.test(file.name));
   });
 
-  const videoIndex = findIndexByVideoExtencion(matchingFiles);
+  const videoIndex = findIndexByVideoExtension(matchingFiles);
   const file = matchingFiles[videoIndex];
 
   return files.indexOf(file);
 }
 
-function findIndexByVideoExtencion(files) {
+function findIndexByVideoExtension(files) {
   const pattern = new RegExp(
     "\\.(mkv|mp4|avi|mov|webm|flv|wmv|mpeg|mpg|3gp|ts|m4v)$",
     "i"
@@ -421,7 +421,7 @@ function findIndexByYear(files, year) {
     return patterns.some((pattern) => pattern.test(file.name));
   });
 
-  const videoIndex = findIndexByVideoExtencion(matchingFiles);
+  const videoIndex = findIndexByVideoExtension(matchingFiles);
   const file = matchingFiles[videoIndex];
 
   return files.indexOf(file);
@@ -433,7 +433,7 @@ function containsVideoFile(parsedTorrent) {
   }
 
   const files = parsedTorrent.files;
-  const videoIdx = findIndexByVideoExtencion(files);
+  const videoIdx = findIndexByVideoExtension(files);
 
   return videoIdx >= 0;
 }
@@ -455,7 +455,7 @@ function parseStream(info, indexerTorrent, parsedTorrent) {
         if (countByVideoExtencion(files) > 1) {
           fileIdx = findIndexByYear(files, info.year);
         } else {
-          fileIdx = findIndexByVideoExtencion(files);
+          fileIdx = findIndexByVideoExtension(files);
         }
       } else if (info.type == "series") {
         // if in torrent several seasons/episodes - find by season and episode
@@ -508,7 +508,9 @@ function parseStream(info, indexerTorrent, parsedTorrent) {
   stream.seeders = indexerTorrent.seeders;
   stream.published = indexerTorrent.published;
 
-  const trackers = parsedTorrent.announce;
+  const trackers = Array.isArray(parsedTorrent.announce)
+    ? parsedTorrent.announce
+    : [];
   stream.sources = trackers
     .map((t) => "tracker:" + t)
     .concat(["dht:" + infoHash]);

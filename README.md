@@ -16,8 +16,9 @@ Returns a [Stremio](https://www.stremio.com/) add-on manifest.
 
 ### Response
 
-- Content-Type: `application/json`
-- Includes metadata for Stremio to register the add-on.
+**Content-Type**: `application/json`
+
+**Purpose**: Includes metadata for Stremio to register the add-on
 
 ### Example
 
@@ -106,11 +107,11 @@ Configuration is handled via environment variables or default values.
 
 ### Parameters
 
-| Environment Variable | Description                             | Type    | Default Value   |
-| -------------------- | --------------------------------------- | ------- | --------------- |
-| `PORT`               | Port the server listens on              | number  | `7000`          |
-| `DEBUG`              | Debug mode for logging (`true`/`false`) | boolean | `false`         |
-| `NAME`               | Plugin name to display                  | string  | `Jackett`       |
+| Environment Variable | Description                             | Type    | Default Value |
+| -------------------- | --------------------------------------- | ------- | ------------- |
+| `PORT`               | Port the server listens on              | number  | `7000`        |
+| `DEBUG`              | Debug mode for logging (`true`/`false`) | boolean | `false`       |
+| `NAME`               | Plugin name to display                  | string  | `Jackett`     |
 
 ### Jackett
 

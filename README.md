@@ -24,8 +24,8 @@ Returns a [Stremio](https://www.stremio.com/) add-on manifest.
 ```json
 {
   "id": "org.stremio.jackett-stremio",
-  "version": "1.0.1",
-  "name": "Jackett (S/H)",
+  "version": "x.x.x",
+  "name": "Jackett",
   "description": "Stremio-плагін, що шукає українські торенти через Jackett.",
   "logo": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jacket-logo.png",
   "icon": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jacket-icon.png",

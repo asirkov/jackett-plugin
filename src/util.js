@@ -1,198 +1,169 @@
-const videoNameParser = require('video-name-parser');
+import videoNameParser from "video-name-parser";
 
 const util = {
+  toBytesSize(stringSize) {
+    const sizeString = typeof stringSize === "string" ? stringSize : stringSize.toString();
 
-    toBytesSize(stringSize) {
-        const sizeString = (typeof stringSize === 'string') ? stringSize : stringSize.toString();
-        const sizeRegex = /^(\d+(\.\d+)?)\s*([kKmMgGtT]?[bB]?)$/;
-        const match = sizeString.match(sizeRegex);
+    const sizeRegex = /^(\d+(\.\d+)?)\s*([kKmMgGtT]?[bB]?)$/;
+    const match = sizeString.match(sizeRegex);
 
-        if (!match) {
-            console.error('Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example : 5GB');
-            return 10000000000;
-        }
+    if (!match) {
+      console.error("Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example: 5GB");
+      return 10 * 1024 ** 3; // 10 GiB default
+    }
 
-        const numericPart = parseFloat(match[1]);
-        const unit = match[3].toUpperCase();
+    const numericPart = parseFloat(match[1]);
+    const rawUnit = (match[3] || "B").toUpperCase();
+    const unit = rawUnit.endsWith("B") ? rawUnit : rawUnit + "B";
 
-        const units = {
-            'B': 1,
-            'KB': 1024,
-            'MB': 1024 * 1024,
-            'GB': 1024 * 1024 * 1024,
-            'TB': 1024 * 1024 * 1024 * 1024,
-        };
+    const units = {
+      B: 1,
+      KB: 1024,
+      MB: 1024 * 1024,
+      GB: 1024 * 1024 * 1024,
+      TB: 1024 * 1024 * 1024 * 1024,
+    };
 
-        if (Object.prototype.hasOwnProperty.call(unit, units)) {
-            console.error('Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example : 5GB');
-            return 10000000000;
-        }
+    if (!Object.hasOwn(units, unit)) {
+      console.error("Invalid maximumSize format set. Supported formats: B/KB/MB/GB/TB. Example: 5GB");
 
-        return parseInt(numericPart * units[unit]);
-    },
+      return 10 * 1024 ** 3; // 10 GiB default
+    }
 
-    toStringSize: (bytesSize) => {
-        if (Math.abs(bytesSize) < 1024) { return bytesSize + ' B'; }
+    return Math.round(numericPart * units[unit]);
+  },
 
-        const units = ['kb', 'mb', 'gb', 'tb'];
+  toStringSize: (bytesSize) => {
+    if (Math.abs(bytesSize) < 1024) {
+      return bytesSize + " B";
+    }
 
-        let i = -1;
-        do {
-            bytesSize /= 1024;
-            ++i;
-        } while (Math.abs(bytesSize) >= 1024 && i < units.length - 1);
+    const units = ["kb", "mb", "gb", "tb"];
 
-        return bytesSize.toFixed(1) + " " + units[i];
-    },
+    let i = -1;
+    do {
+      bytesSize /= 1024;
+      ++i;
+    } while (Math.abs(bytesSize) >= 1024 && i < units.length - 1);
 
-    insertSorted: (array, newObj, property, maxSize) => {
-        const insertIndex = array.findIndex(
-            item => item[property] < newObj[property]
-        );
+    return bytesSize.toFixed(1) + " " + units[i];
+  },
 
-        if (insertIndex === -1) {
-            if (array.length < maxSize) {
-                array.push(newObj);
-                return true;
-            }
-            return false;
-        }
+  extractEpisodeTag: (season, episode) => {
+    const pad = (n) => String(n).padStart(2, "0");
+    return `S${pad(season)}E${pad(episode)}`;
+  },
 
-        array.splice(insertIndex, 0, newObj);
+  findQuality: (tag) => {
+    if (typeof tag !== "string") {
+      return "";
+    }
 
-        if (array.length > maxSize) {
-            array.pop();
-        }
+    const qualityRegex = /\b(4K|[0-9]{3,4}[pi])\b/i;
+    const sourceRegex =
+      /\b(DLRip|HDTV|DivX|XviD|DL(?:MUX)?|WEB(?:-DL|-Rip|MUX)?|BDMUX|BRMUX|Telecine|CAMRip|HQCAM|Bluray|VHSSCR|R5|PPVRip|TC|HDTVRip|TVRip|DVDscr|DVDR\d?|DVDRip|BDRip|BRRip|HDRip|HDTS|HD(?:CAM|TS|Rip)|TS|CAM)\b/i;
 
-        return true;
-    },
+    const sourceMatch = tag.match(sourceRegex);
+    const qualityMatch = tag.match(qualityRegex);
 
-    extractEpisodeTag: (season, episode) => {
-        const pad = (n) => String(n).padStart(2, '0');
-        return `S${pad(season)}E${pad(episode)}`;
-    },
+    return qualityMatch?.[0] ?? sourceMatch?.[0] ?? "";
+  },
 
-    findQuality: (tag) => {
-        if (typeof tag !== 'string') {
-            return ""
-        }
+  cleanName: (name) => {
+    if (typeof name !== "string" || name.length === 0) {
+      return "";
+    }
 
-        const qualityRegex = /\b(4K|[0-9]{3,4}[pi])\b/i;
-        const sourceRegex = /\b(DLRip|HDTV|DivX|XviD|DL(?:MUX)?|WEB(?:-DL|-Rip|MUX)?|BDMUX|BRMUX|Telecine|CAMRip|HQCAM|Bluray|VHSSCR|R5|PPVRip|TC|HDTVRip|TVRip|DVDscr|DVDR\d?|DVDRip|BDRip|BRRip|HDRip|HDTS|HD(?:CAM|TS|Rip)|TS|CAM)\b/i;
+    return name
+      .replace(/[._\-–()[\]:,]/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/'/g, "")
+      .replace(/\\\\/g, "\\")
+      .replace(/\\'|\\"/g, "");
+  },
 
-        const sourceMatch = tag.match(sourceRegex);
-        const qualityMatch = tag.match(qualityRegex);
+  cleanTorrentName: (name) => {
+    if (typeof name !== "string" || name.length === 0) {
+      return "";
+    }
+    let cleaned = name;
 
-        return qualityMatch?.[0] ?? sourceMatch?.[0] ?? "";
-    },
+    // Extract year if it exists in parentheses or after the title
+    let yearMatch = cleaned.match(/\b(19|20)\d{2}\b/);
+    let year = yearMatch ? yearMatch[0] : "";
 
-    cleanName: (name) => {
-        if (typeof name !== 'string' || name.length === 0) {
-            return '';
-        }
+    // Keep only the main title (before slash/pipe/newline)
+    cleaned = cleaned.split(/[\/|]/)[0].split(/\r?\n/)[0];
 
-        return name
-            .replace(/[._\-–()[\]:,]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .replace(/'/g, '')
-            .replace(/\\\\/g, '\\')
-            .replace(/\\'|\\"/g, '');
-    },
+    // Remove technical tags: resolution, codecs, HDR/SDR, language tags
+    cleaned = cleaned.replace(
+      /\b(1080p|720p|uhd|bdrip|bdremux|dvdrip|webrip|web-dl|h\.265|h\.264|hdr|sdr|avc|hevc|x264|x265|hd|bluray|dvdscr|cam|line)\b/gi,
+      ""
+    );
+    cleaned = cleaned.replace(/\b(ukr|eng|fre|kor|jpn|sub|2xukr|2xeng|3xukr)\b/gi, "");
 
-    normalizeTitle: (torrent, info) => {
-        const defaultName = '👤 11/2 💾 2 gb ⚙️ therarbg';
-        let name = defaultName;
-        let found = false;
+    // Remove unnecessary characters (keep all letters/numbers, spaces, (), :)
+    cleaned = cleaned.replace(/[^\p{L}\p{N}\s():]/gu, " ");
 
-        const titles = torrent.title.split('\n');
+    // Replace multiple spaces with a single one
+    cleaned = cleaned.replace(/\s+/g, " ").trim();
 
-        for (const line of titles) {
-            if (!line.includes('👤')) continue;
+    // Add year back if it was found
+    if (year) {
+      cleaned = `${cleaned} ${year}`;
+    }
 
-            name = line;
+    return cleaned;
+  },
 
-            if (!name.includes('⚙️')) {
-                name += ' ⚙️ therarbg';
-            }
+  parseVideoName: (name) => {
+    return videoNameParser(name + ".mp4");
+  },
 
-            const match = name.match(/👤 (\d+)/);
-            if (!match) continue;
+  extractExtraTag: (name) => {
+    const parsed = util.parseVideoName(name);
+    let extraTag = util.cleanName(name);
 
-            const peers = parseInt(match[1], 10);
-            if (!/👤 \d+\/\d+/.test(name)) {
-                const seeds = Math.round(peers / 1.1);
-                const leechers = Math.round(peers * 0.6);
+    if (parsed.name) {
+      const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const escaped = escapeRegExp(parsed.name);
+      extraTag = extraTag.replace(new RegExp(escaped, "gi"), "");
+    }
 
-                name = name.replace(/👤 \d+/, `👤 ${seeds}/${leechers}`).toLowerCase();
+    if (parsed.year) {
+      extraTag = extraTag.replace(parsed.year.toString(), "");
+    }
 
-                const extra = info.season && info.episode
-                    ? util.extractEpisodeTag(info.season, info.episode)
-                    : info.year;
+    const hasEpisode = parsed.season != null && (parsed.episode?.length ?? 0) > 0;
+    if (hasEpisode) {
+      const episodeTag = util.extractEpisodeTag(parsed.season, parsed.episode[0]);
+      extraTag = extraTag.replace(new RegExp(episodeTag, "gi"), "");
+    }
 
-                torrent.title = `${info.name} ${extra}\n\r\n${name}`;
-                torrent.seeders = seeds;
-                found = true;
-                break;
-            }
-        }
+    extraTag = extraTag.trim();
+    let extraParts = extraTag.split(/\s+/);
 
-        if (!found) {
-            const extra = info.season && info.episode
-                ? util.extractEpisodeTag(info.season, info.episode)
-                : info.year;
+    if (hasEpisode && extraParts[0]?.length === 2 && !isNaN(extraParts[0])) {
+      const possibleEpTag = `${util.extractEpisodeTag(parsed.season, parsed.episode[0])}-${extraParts[0]}`;
+      if (name.toLowerCase().includes(possibleEpTag.toLowerCase())) {
+        extraParts[0] = possibleEpTag;
+      }
+    }
 
-            torrent.title = `${info.name} ${extra}\n\r\n${defaultName}`;
-            torrent.seeders = 11;
-        }
-    },
+    const foundIndex = name.toLowerCase().indexOf(extraParts[0]?.toLowerCase());
+    if (foundIndex > -1) {
+      extraTag = name.substring(foundIndex);
+      extraTag = extraTag.replace(/[_()[\],]/g, " ");
 
-    parseVideoName: (name) => {
-        return videoNameParser(name + '.mp4');
-    },
+      if ((extraTag.match(/\./g) || []).length > 1) {
+        extraTag = extraTag.replace(/\./g, " ");
+      }
 
-    extractExtraTag: (name) => {
-        const parsed = util.parseVideoName(name + '.mp4');
-        let extraTag = util.cleanName(name);
+      extraTag = extraTag.replace(/\s+/g, " ").trim();
+    }
 
-        if (parsed.name) {
-            extraTag = extraTag.replace(new RegExp(parsed.name, 'gi'), '');
-        }
+    return extraTag;
+  },
+};
 
-        if (parsed.year) {
-            extraTag = extraTag.replace(parsed.year.toString(), '');
-        }
-
-        const hasEpisode = parsed.season && parsed.episode?.length;
-        if (hasEpisode) {
-            const episodeTag = util.extractEpisodeTag(parsed.season, parsed.episode[0]);
-            extraTag = extraTag.replace(new RegExp(episodeTag, 'gi'), '');
-        }
-
-        extraTag = extraTag.trim();
-        let extraParts = extraTag.split(/\s+/);
-
-        if (hasEpisode && extraParts[0]?.length === 2 && !isNaN(extraParts[0])) {
-            const possibleEpTag = `${util.extractEpisodeTag(parsed.season, parsed.episode[0])}-${extraParts[0]}`;
-            if (name.toLowerCase().includes(possibleEpTag.toLowerCase())) {
-                extraParts[0] = possibleEpTag;
-            }
-        }
-
-        const foundIndex = name.toLowerCase().indexOf(extraParts[0]?.toLowerCase());
-        if (foundIndex > -1) {
-            extraTag = name.substring(foundIndex);
-            extraTag = extraTag.replace(/[_()[\],]/g, ' ');
-
-            if ((extraTag.match(/\./g) || []).length > 1) {
-                extraTag = extraTag.replace(/\./g, ' ');
-            }
-
-            extraTag = extraTag.replace(/\s+/g, ' ').trim();
-        }
-
-        return extraTag;
-    },
-
-}
-
-module.exports = util;
+export default util;

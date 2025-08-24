@@ -110,7 +110,7 @@ Configuration is handled via environment variables or default values.
 | -------------------- | --------------------------------------- | ------- | --------------- |
 | `PORT`               | Port the server listens on              | number  | `7000`          |
 | `DEBUG`              | Debug mode for logging (`true`/`false`) | boolean | `false`         |
-| `NAME`               | Plugin name to display                  | string  | `Jackett (S/H)` |
+| `NAME`               | Plugin name to display                  | string  | `Jackett`       |
 
 ### Jackett
 

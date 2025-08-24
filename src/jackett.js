@@ -120,7 +120,7 @@ async function getIndexerTorrentMap(info, indexers, host, apiKey) {
 
       const response = await cache.get(url, params, { responseType: "text" });
       if (!response) {
-        console.error("Error when calling: ", indexer.attributes.id, response.err);
+        console.error("Error when calling: ", indexer.attributes.id, response);
         return [];
       }
 

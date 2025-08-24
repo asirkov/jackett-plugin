@@ -1,24 +1,16 @@
 {
-    "id": "org.stremio.jackett-plugin",
-    "description": "Stremio-плагін, що шукає українські торенти через Jackett.",
-    "logo": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jacket-logo.png",
-    "icon": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jacket-icon.png",
-    "resources": [
-        "stream"
-    ],
-    "types": [
-        "movie",
-        "series"
-    ],
-    "idPrefixes": [
-        "tt",
-        "tmdb"
-    ],
-    "behaviorHints": {
-        "configurationRequired": false,
-        "p2p": true,
-        "configurable": false,
-        "adult": false
-    },
-    "catalogs": []
+  "id": "org.stremio.jackett-plugin",
+  "description": "Stremio addon that fetches Ukrainian torrents from Jackett.",
+  "logo": "https://raw.githubusercontent.com/linuxserver/docker-templates/<commit-hash>/linuxserver.io/img/jacket-logo.png",
+  "icon": "https://raw.githubusercontent.com/linuxserver/docker-templates/<commit-hash>/linuxserver.io/img/jacket-icon.png",
+  "resources": ["stream"],
+  "types": ["movie", "series"],
+  "idPrefixes": ["tt", "tmdb"],
+  "behaviorHints": {
+    "configurationRequired": false,
+    "p2p": true,
+    "configurable": false,
+    "adult": false
+  },
+  "catalogs": []
 }

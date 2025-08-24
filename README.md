@@ -16,30 +16,23 @@ Returns a [Stremio](https://www.stremio.com/) add-on manifest.
 
 ### Response
 
-* Content-Type: `application/json`
-* Includes metadata for Stremio to register the add-on.
+**Content-Type**: `application/json`
+
+**Purpose**: Includes metadata for Stremio to register the add-on
 
 ### Example
 
 ```json
 {
   "id": "org.stremio.jackett-stremio",
-  "version": "1.0.1",
-  "name": "Jackett (S/H)",
-  "description": "Stremio-плагін, що шукає українські торенти через Jackett.",
+  "version": "x.x.x",
+  "name": "Jackett",
+  "description": "Stremio addon that fetches Ukrainian torrents from Jackett.",
   "logo": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jacket-logo.png",
   "icon": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jacket-icon.png",
-  "resources": [
-    "stream"
-  ],
-  "types": [
-    "movie",
-    "series"
-  ],
-  "idPrefixes": [
-    "tt",
-    "tmdb"
-  ],
+  "resources": ["stream"],
+  "types": ["movie", "series"],
+  "idPrefixes": ["tt", "tmdb"],
   "behaviorHints": {
     "configurationRequired": false,
     "p2p": true,
@@ -58,19 +51,19 @@ Returns streaming links (torrent magnet URIs) for the specified content type and
 
 ### Path Parameters
 
-* `type` — `"movie"` or `"series"`
-* `id` — TMDb or IMDb ID (e.g. `tt10366206`)
+- `type` — `"movie"` or `"series"`
+- `id` — TMDb or IMDb ID (e.g. `tt10366206`)
 
 ### Query Parameters
 
-* `extra` (optional) — passed through for Stremio compatibility
+- `extra` (optional) — passed through for Stremio compatibility
 
 ### Behavior
 
-* Fetches metadata from TMDb
-* Queries Jackett for matching torrents
-* Filters results based on configuration (`minimumSeeders`, `maximumSize`, etc.)
-* Returns a list of streamable magnet links
+- Fetches metadata from TMDb
+- Queries Jackett for matching torrents
+- Filters results based on configuration (`minimumSeeders`, `maximumSize`, etc.)
+- Returns a list of streamable magnet links
 
 ### Example Response
 
@@ -102,11 +95,11 @@ Returns streaming links (torrent magnet URIs) for the specified content type and
 
 ### Notes
 
-* `published` — ISO 8601 date of torrent appearance
-* `title` — includes torrent metadata such as resolution, audio/subtitle tracks, size, and source
-* `seeders` — number of reported seeders at time of scraping
-* `sources` — array of announce URLs and DHT hashes
-* `behaviorHints.bingeGroup` — groups torrents for better UX in Stremio
+- `published` — ISO 8601 date of torrent appearance
+- `title` — includes torrent metadata such as resolution, audio/subtitle tracks, size, and source
+- `seeders` — number of reported seeders at time of scraping
+- `sources` — array of announce URLs and DHT hashes
+- `behaviorHints.bingeGroup` — groups torrents for better UX in Stremio
 
 ## ⚙️ Configuration
 
@@ -114,11 +107,11 @@ Configuration is handled via environment variables or default values.
 
 ### Parameters
 
-| Environment Variable | Description                              | Type    | Default Value   |
-| -------------------- | ---------------------------------------- | ------- | --------------- |
-| `PORT`               | Port the server listens on               | number  | `7000`          |
-| `DEBUG`              | Debug mode for logging (`true`/`false`)  | boolean | `false`         |
-| `NAME`               | Plugin name to dicplay                   | string  | `Jackett (S/H)` |
+| Environment Variable | Description                             | Type    | Default Value |
+| -------------------- | --------------------------------------- | ------- | ------------- |
+| `PORT`               | Port the server listens on              | number  | `7000`        |
+| `DEBUG`              | Debug mode for logging (`true`/`false`) | boolean | `false`       |
+| `NAME`               | Plugin name to display                  | string  | `Jackett`     |
 
 ### Jackett
 
@@ -131,7 +124,7 @@ Configuration is handled via environment variables or default values.
 
 | Environment Variable | Description                                     | Type      | Default Value |
 | -------------------- | ----------------------------------------------- | --------- | ------------- |
-| `TBDB_API_KEY`       | API key for [TMDb](https://www.themoviedb.org/) | string    | -             |
+| `TMDB_API_KEY`       | API key for [TMDb](https://www.themoviedb.org/) | string    | -             |
 | `LANGUAGES`          | Languages for TMDb requests (comma-separated)   | string\[] | `["en-US"]`   |
 
 ### Filtering Results
@@ -146,7 +139,7 @@ Configuration is handled via environment variables or default values.
 > **ignoreTitles** (default value):
 
 ```js
-/\b(Telecine|CAMRip)\b|\b(?:HD-?)?T(?:ELE)?S(?:YNC)?\b|\b(?:HD-?)?CAM\b|\b(?:HQ-?)?CAM\b/
+/\b(Telecine|CAMRip)\b|\b(?:HD-?)?T(?:ELE)?S(?:YNC)?\b|\b(?:HD-?)?CAM\b|\b(?:HQ-?)?CAM\b/;
 ```
 
 This regular expression filters out low-quality releases such as CAMRip, HDCAM, Telesync, etc.
@@ -165,7 +158,6 @@ This regular expression filters out low-quality releases such as CAMRip, HDCAM, 
 | Environment Variable | Description                        | Type   | Default Value |
 | -------------------- | ---------------------------------- | ------ | ------------- |
 | `REQUEST_TIMEOUT_MS` | Timeout for external requests (ms) | number | `8000`        |
-
 
 ## 🚀 Usage
 
@@ -189,7 +181,7 @@ npm install
 PORT=7001 \
 JACKETT_URL=http://localhost:9117 \
 JACKETT_API_KEY=your_api_key \
-TBDB_API_KEY=your_tmdb_key \
+TMDB_API_KEY=your_tmdb_key \
 node index.js
 ```
 
@@ -201,7 +193,7 @@ DEBUG=true
 NAME=Jackett
 JACKETT_URL=http://localhost:9117
 JACKETT_API_KEY=your_api_key
-TBDB_API_KEY=your_tmdb_key
+TMDB_API_KEY=your_tmdb_key
 LANGUAGES=en-US,uk-UA
 MAXIMUM_SIZE=8GB
 MINIMUM_SEEDERS=10

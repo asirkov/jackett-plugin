@@ -83,24 +83,25 @@ const util = {
   },
 
   cleanTorrentName: (name) => {
+    if (typeof name !== "string" || name.length === 0) return "";
     let cleaned = name;
 
     // Extract year if it exists in parentheses or after the title
     let yearMatch = cleaned.match(/\b(19|20)\d{2}\b/);
     let year = yearMatch ? yearMatch[0] : "";
 
-    // Take everything before the first slash or vertical bar as the main title
-    cleaned = cleaned.split(/[\/|]/)[0];
+    // Keep only the main title (before slash/pipe/newline)
+    cleaned = cleaned.split(/[\/|]/)[0].split(/\r?\n/)[0];
 
     // Remove technical tags: resolution, codecs, HDR/SDR, language tags
     cleaned = cleaned.replace(
-      /\b(1080p|720p|uhd|bdrip|bdremux|dvdrip|webrip|web-dl|h\.265|h\.264|hdr|sdr|avc|hevc|x264|x265|uhd|hd|bluray|dvdscr|cam|line)\b/gi,
+      /\b(1080p|720p|uhd|bdrip|bdremux|dvdrip|webrip|web-dl|h\.265|h\.264|hdr|sdr|avc|hevc|x264|x265|hd|bluray|dvdscr|cam|line)\b/gi,
       ""
     );
     cleaned = cleaned.replace(/\b(ukr|eng|fre|kor|jpn|sub|2xukr|2xeng|3xukr)\b/gi, "");
 
-    // Remove unnecessary characters
-    cleaned = cleaned.replace(/[^a-zа-яё0-9\s\(\)\:]/gi, " ");
+    // Remove unnecessary characters (keep all letters/numbers, spaces, (), :)
+    cleaned = cleaned.replace(/[^\p{L}\p{N}\s():]/gu, " ");
 
     // Replace multiple spaces with a single one
     cleaned = cleaned.replace(/\s+/g, " ").trim();

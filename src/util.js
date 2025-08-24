@@ -96,14 +96,18 @@ const util = {
     let extraTag = util.cleanName(name);
 
     if (parsed.name) {
-      extraTag = extraTag.replace(new RegExp(parsed.name, "gi"), "");
+      const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const escaped = escapeRegExp(parsed.name);
+      extraTag = extraTag.replace(new RegExp(escaped, "gi"), "");
     }
 
     if (parsed.year) {
       extraTag = extraTag.replace(parsed.year.toString(), "");
     }
+    // …
+  },
 
-    const hasEpisode = parsed.season && parsed.episode?.length;
+    const hasEpisode = parsed.season != null && (parsed.episode?.length ?? 0) > 0;
     if (hasEpisode) {
       const episodeTag = util.extractEpisodeTag(
         parsed.season,

@@ -85,27 +85,27 @@ const util = {
   cleanTorrentName: (name) => {
     let cleaned = name;
 
-    // Виділяємо рік, якщо він є в дужках або після назви
+    // Extract year if it exists in parentheses or after the title
     let yearMatch = cleaned.match(/\b(19|20)\d{2}\b/);
     let year = yearMatch ? yearMatch[0] : "";
 
-    // Беремо все до першого слеша або вертикальної риски як основну назву
+    // Take everything before the first slash or vertical bar as the main title
     cleaned = cleaned.split(/[\/|]/)[0];
 
-    // Видаляємо технічні теги: роздільник, кодеки, HDR/SDR, мовні теги
+    // Remove technical tags: resolution, codecs, HDR/SDR, language tags
     cleaned = cleaned.replace(
       /\b(1080p|720p|uhd|bdrip|bdremux|dvdrip|webrip|web-dl|h\.265|h\.264|hdr|sdr|avc|hevc|x264|x265|uhd|hd|bluray|dvdscr|cam|line)\b/gi,
       ""
     );
     cleaned = cleaned.replace(/\b(ukr|eng|fre|kor|jpn|sub|2xukr|2xeng|3xukr)\b/gi, "");
 
-    // Видаляємо зайві символи
+    // Remove unnecessary characters
     cleaned = cleaned.replace(/[^a-zа-яё0-9\s\(\)\:]/gi, " ");
 
-    // Замінюємо множинні пробіли на один
+    // Replace multiple spaces with a single one
     cleaned = cleaned.replace(/\s+/g, " ").trim();
 
-    // Додаємо рік, якщо він знайдений
+    // Add year back if it was found
     if (year) {
       cleaned = `${cleaned} ${year}`;
     }

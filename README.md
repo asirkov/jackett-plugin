@@ -28,7 +28,7 @@ Returns a [Stremio](https://www.stremio.com/) add-on manifest.
   "version": "x.x.x",
   "name": "Jackett",
   "description": "Stremio addon that fetches Ukrainian torrents from Jackett.",
-  "logo": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jacket-logo.png",
+  "logo": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jackett-logo.png",
   "icon": "https://raw.githubusercontent.com/linuxserver/docker-templates/refs/heads/master/linuxserver.io/img/jacket-icon.png",
   "resources": ["stream"],
   "types": ["movie", "series"],
@@ -146,12 +146,11 @@ This regular expression filters out low-quality releases such as CAMRip, HDCAM, 
 
 ### Caching
 
-> ⚠️ **Note:** Caching is currently not implemented. The following parameters are placeholders and have no effect at this time.
-
-| Environment Variable | Description                    | Type   | Default Value  |
-| -------------------- | ------------------------------ | ------ | -------------- |
-| `CACHE_TTL_MS`       | Cache TTL in milliseconds      | number | `0` (disabled) |
-| `CACHE_MAXIMUM_SIZE` | Max number of entries in cache | number | `0` (disabled) |
+| Environment Variable | Description                              | Type    | Default Value    |
+| -------------------- | ---------------------------------------- | ------- | ---------------- |
+| `CACHE_ENABLED`      | Flag to enable/disabled requests caching | boolean | `true`           |
+| `CACHE_TTL_MS`       | Cache TTL in milliseconds                | number  | `300000` (5 min) |
+| `CACHE_MAXIMUM_SIZE` | Max number of entries in cache           | number  | `100`            |
 
 ### Other
 

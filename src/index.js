@@ -1,37 +1,19 @@
-const { version } = require("../package.json");
+import StremioAddonSdk from "stremio-addon-sdk";
+const { addonBuilder, serveHTTP } = StremioAddonSdk;
 
-const axios = require("axios");
+import jackett from "./jackett.js";
+import config from "./config.js";
+import cache from "./cache.js";
+import util from "./util.js";
 
-const { addonBuilder, serveHTTP } = require("stremio-addon-sdk");
+import { default as pkg } from "../package.json" assert { type: "json" };
+import { default as manifest } from "./manifest.json" assert { type: "json" };
 
-const util = require("./util");
-const config = require("./config");
-const jackett = require("./jackett");
-
-const manifest = require("./manifest.json");
-manifest.version = version;
-manifest.name = config.name;
-
-const builder = new addonBuilder(manifest);
-
-if (config.debug) {
-  axios.interceptors.request.use((request) => {
-    console.log({
-      method: request.method,
-      url: request.url,
-      params: request.params,
-    });
-    return request;
-  });
-
-  axios.interceptors.response.use((response) => {
-    console.log({
-      status: response.status,
-      data: response.data,
-    });
-    return response;
-  });
-}
+const builder = new addonBuilder({
+  ...manifest,
+  name: config.name,
+  version: pkg.version,
+});
 
 function parseId(id) {
   if (id.startsWith("tmdb:")) {
@@ -113,27 +95,20 @@ function parseTtYear(ttYear) {
 async function findTmdbInfo(language, type, id) {
   const ttId = parseId(id);
 
+  const url = `https://api.themoviedb.org/3/find/${ttId}`;
   const params = {
     api_key: config.tmdbApiKey,
     language: language,
     external_source: "imdb_id",
   };
-  const response = await axios.get(
-    `https://api.themoviedb.org/3/find/${ttId}`,
-    {
-      params: params,
-      maxRedirects: 5,
-      timeout: config.requestTimeoutMs,
-      responseType: "json",
-    }
-  );
 
-  if (!response || response.status != 200 || !response.data) {
-    console.error("Error fetching TMDB (find) data:", response.statusText);
+  const response = await cache.get(url, params, { maxRedirects: 5 });
+  if (!response) {
+    console.error("Error fetching TMDB (find) data:", response);
     return [];
   }
 
-  return parseTmdbFindInfo(type, id, response.data);
+  return parseTmdbFindInfo(type, id, response);
 }
 
 function parseTmdbFindInfo(type, id, tmdbInfo) {
@@ -195,24 +170,19 @@ function parseTmdbFindInfo(type, id, tmdbInfo) {
 async function getTtInfo(type, id) {
   const ttId = parseId(id);
 
-  const response = await axios.get(
-    `https://v3-cinemeta.strem.io/meta/${type}/${ttId}.json`,
-    {
-      maxRedirects: 5,
-      timeout: config.requestTimeoutMs,
-      responseType: "json",
-    }
-  );
+  const url = `https://v3-cinemeta.strem.io/meta/${type}/${ttId}.json`;
 
-  if (!response || response.status != 200 || !response.data) {
-    console.error("Error fetching Cinemeta data:", response.statusText);
+  const response = await cache.get(url, {}, { maxRedirects: 5 });
+  if (!response) {
+    console.error("Error fetching Cinemeta data:", response);
     return [];
   }
 
-  return parseTtInfo(response.data);
+  return parseTtInfo(type, id, response);
 }
 
 function parseTtInfo(type, id, ttInfo) {
+  const ttId = parseId(id);
   if (!ttInfo) {
     return [];
   }
@@ -230,7 +200,7 @@ function parseTtInfo(type, id, ttInfo) {
 
   const result = [
     {
-      id: tmdbId,
+      id: ttId,
       type: type,
       name: name,
       year: year,
@@ -242,7 +212,7 @@ function parseTtInfo(type, id, ttInfo) {
 
   if (year) {
     result.push({
-      id: tmdbId,
+      id: ttId,
       type: type,
       name: `${name} ${year}`,
       year: year,
@@ -265,26 +235,19 @@ async function getTmdbInfo(language, type, id) {
     return [];
   }
 
+  const url = `https://api.themoviedb.org/3/${tmdbType}/${tmdbId}`;
   const params = {
     api_key: config.tmdbApiKey,
     language: language,
   };
-  const response = await axios.get(
-    `https://api.themoviedb.org/3/${tmdbType}/${tmdbId}`,
-    {
-      params: params,
-      maxRedirects: 5,
-      timeout: config.requestTimeoutMs,
-      responseType: "json",
-    }
-  );
 
-  if (!response || response.status != 200 || !response.data) {
-    console.error("Error fetching TMDB info data:", response.statusText);
+  const response = await cache.get(url, params, { maxRedirects: 5 });
+  if (!response) {
+    console.error("Error fetching TMDB info data:", response);
     return [];
   }
 
-  return parseTmdbGetInfo(type, id, response.data);
+  return parseTmdbGetInfo(type, id, response);
 }
 
 function parseTmdbGetInfo(type, id, tmdbInfo) {
@@ -341,18 +304,14 @@ async function getInfo(type, id) {
 
   const languages = config.languages;
   if (db == "tmdb" && config.tmdbApiKey) {
-    const nestedInfo = await Promise.all(
-      languages.map((language) => getTmdbInfo(language, type, id))
-    );
+    const nestedInfo = await Promise.all(languages.map((language) => getTmdbInfo(language, type, id)));
     const info = nestedInfo.flat();
     return info;
   }
 
   if (db == "tt") {
     if (config.tmdbApiKey) {
-      const nestedInfo = await Promise.all(
-        languages.map((language) => findTmdbInfo(language, type, id))
-      );
+      const nestedInfo = await Promise.all(languages.map((language) => findTmdbInfo(language, type, id)));
       const info = nestedInfo.flat();
       if (info.length > 0) {
         return info;
@@ -392,19 +351,13 @@ function findIndexBySeasonAndEpisode(files, season, episode) {
 }
 
 function findIndexByVideoExtension(files) {
-  const pattern = new RegExp(
-    "\\.(mkv|mp4|avi|mov|webm|flv|wmv|mpeg|mpg|3gp|ts|m4v)$",
-    "i"
-  );
+  const pattern = new RegExp("\\.(mkv|mp4|avi|mov|webm|flv|wmv|mpeg|mpg|3gp|ts|m4v)$", "i");
 
   return files.findIndex((file) => pattern.test(file.name));
 }
 
 function countByVideoExtencion(files) {
-  const pattern = new RegExp(
-    "\\.(mkv|mp4|avi|mov|webm|flv|wmv|mpeg|mpg|3gp|ts|m4v)$",
-    "i"
-  );
+  const pattern = new RegExp("\\.(mkv|mp4|avi|mov|webm|flv|wmv|mpeg|mpg|3gp|ts|m4v)$", "i");
 
   return files.filter((file) => pattern.test(file.name)).length;
 }
@@ -484,9 +437,9 @@ function parseStream(info, indexerTorrent, parsedTorrent) {
     day: "numeric",
   });
 
-  const subtitle1 = `👤 ${indexerTorrent.seeders}/${
-    indexerTorrent.peers
-  }  💾 ${util.toStringSize(indexerTorrent.size)} ⚙️ ${indexerTorrent.from}`;
+  const subtitle1 = `👤 ${indexerTorrent.seeders}/${indexerTorrent.peers}  💾 ${util.toStringSize(
+    indexerTorrent.size
+  )} ⚙️ ${indexerTorrent.from}`;
   const subtitle2 = `📅 ${publishedDateStr}`;
 
   title = title.replace("\n", "");
@@ -508,12 +461,8 @@ function parseStream(info, indexerTorrent, parsedTorrent) {
   stream.seeders = indexerTorrent.seeders;
   stream.published = indexerTorrent.published;
 
-  const trackers = Array.isArray(parsedTorrent.announce)
-    ? parsedTorrent.announce
-    : [];
-  stream.sources = trackers
-    .map((t) => "tracker:" + t)
-    .concat(["dht:" + infoHash]);
+  const trackers = Array.isArray(parsedTorrent.announce) ? parsedTorrent.announce : [];
+  stream.sources = trackers.map((t) => "tracker:" + t).concat(["dht:" + infoHash]);
 
   const ttId = parseId(info.id);
   stream.behaviorHints = {
@@ -543,11 +492,7 @@ async function streamHandlerUnsafe({ type, id }) {
 
   const infoTorrents = await Promise.all(
     info.map(async (info) => {
-      const torrents = await jackett.search(
-        info,
-        config.jackettUrl,
-        config.jackettApiKey
-      );
+      const torrents = await jackett.search(info, config.jackettUrl, config.jackettApiKey);
       return {
         info: info,
         torrents: torrents,
@@ -559,23 +504,16 @@ async function streamHandlerUnsafe({ type, id }) {
   const streams = infoTorrents.flatMap((infoTorrent) =>
     infoTorrent.torrents
       .filter((torrent) => containsVideoFile(torrent.parsedTorrent))
-      .map((torrent) =>
-        parseStream(
-          infoTorrent.info,
-          torrent.indexerTorrent,
-          torrent.parsedTorrent
-        )
-      )
+      .map((torrent) => parseStream(infoTorrent.info, torrent.indexerTorrent, torrent.parsedTorrent))
   );
 
-  const unique = Array.from(
-    new Map(streams.map((stream) => [stream.infoHash, stream])).values()
-  );
+  const unique = Array.from(new Map(streams.map((stream) => [stream.infoHash, stream])).values());
 
   // unique.sort((a, b) => b.seeders - a.seeders)
   unique.sort((a, b) => b.published - a.published);
 
-  return { streams: unique.slice(0, config.minimumCount) };
+  config.debug && console.log("Cache stats: ", cache.stats());
+  return { streams: unique.slice(0, config.maximumCount) };
 }
 
 async function streamHandler(args) {
@@ -589,6 +527,5 @@ async function streamHandler(args) {
 
 builder.defineStreamHandler(streamHandler);
 
-config.debug &&
-  console.log("Starting with config: ", JSON.stringify(config, null, 2));
+config.debug && console.log("Starting with config: ", JSON.stringify(config, null, 2));
 serveHTTP(builder.getInterface(), { port: config.port });

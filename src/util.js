@@ -1,4 +1,4 @@
-const videoNameParser = require("video-name-parser");
+import videoNameParser from "video-name-parser";
 
 const util = {
   toBytesSize(stringSize) {
@@ -144,4 +144,4 @@ const util = {
   },
 };
 
-module.exports = util;
+export default util;

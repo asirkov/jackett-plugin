@@ -1,6 +1,6 @@
 {
   "name": "jackett-plugin",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Stremio addon that fetches Ukrainian torrents from Jackett",
   "main": "src/index.js",
   "scripts": {
